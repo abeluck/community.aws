@@ -304,10 +304,16 @@ class Connection(ConnectionBase):
 
         profile_name = ''
         region_name = self.get_option('region')
-        ssm_parameters = dict()
         client = self._get_boto_client('ssm', region_name=region_name)
         self._client = client
-        response = client.start_session(Target=self.instance_id, Parameters=ssm_parameters)
+
+        if self.is_windows:
+            ssm_parameters = dict()
+            response = client.start_session(Target=self.instance_id, Parameters=ssm_parameters)
+        else:
+            ssm_parameters = {"command": ["bash -l"]}
+            response = client.start_session(Target=self.instance_id, DocumentName="AWS-StartInteractiveCommand", Parameters=ssm_parameters)
+
         self._session_id = response['SessionId']
 
         cmd = [
