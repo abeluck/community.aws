@@ -173,6 +173,7 @@ import time
 
 try:
     import boto3
+    from botocore.client import Config
     HAS_BOTO_3 = True
 except ImportError as e:
     HAS_BOTO_3_ERROR = str(e)
@@ -497,7 +498,8 @@ class Connection(ConnectionBase):
 
     def _get_url(self, client_method, bucket_name, out_path, http_method):
         ''' Generate URL for get_object / put_object '''
-        client = self._get_boto_client('s3')
+        config = Config(signature_version='s3v4', region_name=self.get_option('region'))
+        client = boto3.client('s3', config=config)
         return client.generate_presigned_url(client_method, Params={'Bucket': bucket_name, 'Key': out_path}, ExpiresIn=3600, HttpMethod=http_method)
 
     def _get_boto_client(self, service, region_name=None):
@@ -531,9 +533,9 @@ class Connection(ConnectionBase):
             get_command = "Invoke-WebRequest '%s' -OutFile '%s'" % (
                 self._get_url('get_object', self.get_option('bucket_name'), s3_path, 'GET'), out_path)
         else:
-            put_command = "curl --request PUT --upload-file '%s' '%s'" % (
+            put_command = "curl --show-error --silent --fail --request PUT --upload-file '%s' '%s'" % (
                 in_path, self._get_url('put_object', self.get_option('bucket_name'), s3_path, 'PUT'))
-            get_command = "curl '%s' -o '%s'" % (
+            get_command = "curl --show-error --silent --fail '%s' -o '%s'" % (
                 self._get_url('get_object', self.get_option('bucket_name'), s3_path, 'GET'), out_path)
 
         client = self._get_boto_client('s3')
