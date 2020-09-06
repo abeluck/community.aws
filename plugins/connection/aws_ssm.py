@@ -554,6 +554,8 @@ class Connection(ConnectionBase):
                 client.upload_fileobj(data, self.get_option('bucket_name'), s3_path)
             (returncode, stdout, stderr) = self.exec_command(get_command, in_data=None, sudoable=False)
 
+        client.delete_object(Bucket=self.get_option('bucket_name'), Key=s3_path)
+
         # Check the return code
         if returncode == 0:
             return (returncode, stdout, stderr)
